@@ -1,0 +1,41 @@
+name: Build Android App Bundle
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+
+      # Generate missing android/ folder on the runner
+      - name: Initialize Flutter platforms (android)
+        run: flutter create . --platforms=android
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appbundle
+          path: build/app/outputs/bundle/release/app-release.aab
