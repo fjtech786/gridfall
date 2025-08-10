@@ -14,7 +14,8 @@ class Cell {
 }
 
 class GridFallGame extends FlameGame {
-  static const cols = 10, rows = 20;
+  static const int cols = 10;
+  static const int rows = 20;
 
   final GameMode mode;
   final Random rng;
@@ -28,7 +29,7 @@ class GridFallGame extends FlameGame {
   Tetromino? cur;
   Tetromino? hold;
   bool canHold = true;
-  final _bag = <Tetromino>[];
+  final List<Tetromino> _bag = [];
 
   int level = 1, score = 0, lines = 0;
   late Timer _tick;
@@ -213,10 +214,20 @@ class GridFallGame extends FlameGame {
   }
 
   void holdPiece() {
-    if (!canHold) return;
-    final tmp = hold;
+    if (!canHold || cur == null) return;
+
+    final Tetromino? previousHold = hold;
+
+    // move current into hold (normalized)
     hold = cur!..row = 0..col = 3..rot = 0;
-    cur = (tmp == null) ? _next()..row = 0..col = 3 : tmp..row = 0..col = 3;
+
+    // bring back previous hold or next piece
+    if (previousHold == null) {
+      cur = _next()..row = 0..col = 3..rot = 0;
+    } else {
+      cur = previousHold..row = 0..col = 3..rot = 0;
+    }
+
     canHold = false;
     holdPreview.value = hold;
   }
@@ -257,8 +268,8 @@ class GridFallGame extends FlameGame {
 
     // current + ghost
     if (cur != null) {
-      // compute ghost without cascade ++
       var ghost = cur!.copy();
+      // descend until just before collision (no ++ cascade tricks)
       var probe = ghost.copy(); probe.row += 1;
       while (_valid(probe)) {
         ghost = probe;
